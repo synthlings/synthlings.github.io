@@ -19,6 +19,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { GENRES } from '../score/library.mjs';
 import { appendEvent, runDir } from '../session/log.mjs';
+import { BANDS, SEATS, bandIds } from '../bands.mjs';
 import {
   createSession,
   finalizeSession,
@@ -40,8 +41,6 @@ export const LIMITS = Object.freeze({
   repairTurns: 3,
 });
 
-const BANDS = { overfit: 'overfit-v2', 'dead-air': 'dead-air' };
-const SEATS = ['harmony', 'rhythm', 'arrangement'];
 const SESSION_ID = /^[a-z0-9][a-z0-9-]{2,30}$/;
 const GITHUB_LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const NAME = /^[A-Z][A-Za-z0-9 _-]{1,23}$/;
@@ -52,7 +51,7 @@ const noLinks = (s) => !HAS_LINK.test(s);
 const login = z.string().regex(GITHUB_LOGIN, 'must be a GitHub login');
 
 const SessionFile = z.strictObject({
-  band: z.enum(Object.keys(BANDS)),
+  band: z.enum(bandIds()),
   name: z.string().regex(NAME, 'band names start with a capital letter: 2-24 letters, digits, spaces, _ or -'),
   genre: z.enum(Object.keys(GENRES)),
   key: z.string().regex(/^[A-G][#b]?$/),

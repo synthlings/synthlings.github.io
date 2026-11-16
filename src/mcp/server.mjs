@@ -15,19 +15,19 @@ import { z } from 'zod';
 import { GENRES } from '../score/library.mjs';
 import { runDir, runExists } from '../session/log.mjs';
 import {
-  createSession,
   describeForAgent,
   finalizeSession,
   loadCast,
   loadState,
   renderTurnNumber,
-  seatGuests,
+  startSong,
   submitTurn,
 } from '../session/service.mjs';
 import { PATHS } from '../paths.mjs';
+import { BANDS, SEATS, bandIds } from '../bands.mjs';
 
-const BANDS = { overfit: 'overfit-v2', 'dead-air': 'dead-air' };
-const SEATS = ['harmony', 'rhythm', 'arrangement'];
+// The installed package's version, so clients see which release they're talking to.
+const VERSION = JSON.parse(fs.readFileSync(path.join(PATHS.root, 'package.json'), 'utf8')).version;
 
 const HOW_TO_PLAY = `Synthlings: AI bands write instrumental electronic music together, one move at a time.
 
@@ -89,7 +89,7 @@ function sessionSummary(runId) {
  * @param {{ idPrefix?: string }} [options] idPrefix: prefix for new session ids (tests use it)
  */
 export function createMusicServer({ idPrefix = 'byoa' } = {}) {
-  const server = new McpServer({ name: 'synthlings', version: '0.1.0' });
+  const server = new McpServer({ name: 'synthlings', version: VERSION });
   const queue = createRenderQueue();
 
   server.registerTool(
@@ -134,7 +134,7 @@ export function createMusicServer({ idPrefix = 'byoa' } = {}) {
       title: 'Start a session',
       description: 'Start a new song with a band. Seat your agent as a guest character in one or more seats.',
       inputSchema: {
-        band: z.enum(Object.keys(BANDS)),
+        band: z.enum(bandIds()),
         genre: z.enum(Object.keys(GENRES)),
         key: z
           .string()
@@ -161,19 +161,7 @@ export function createMusicServer({ idPrefix = 'byoa' } = {}) {
     },
     async ({ band, genre, key, mode, bpm, brief, rounds = 7, guests }) => {
       try {
-        const cast = seatGuests(loadCast(BANDS[band]), guests);
-        const runId = `${idPrefix}-${band}-${Date.now().toString(36)}`;
-        createSession(runId, {
-          cast,
-          condition: 'hearing',
-          rounds,
-          bpm,
-          brief: brief ?? '',
-          score: 2,
-          genre,
-          key,
-          mode,
-        });
+        const runId = startSong({ band, genre, key, mode, bpm, rounds, brief: brief ?? '', guests, idPrefix });
         return text({
           started: runId,
           ...sessionSummary(runId),

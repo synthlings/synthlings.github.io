@@ -13,6 +13,7 @@ import { applyTurnV2, seedSong } from './rules-v2.mjs';
 import { applyTurn, initialSong } from './rules.mjs';
 import { agentViewV2 } from './view-v2.mjs';
 import { agentView } from './view.mjs';
+import { BANDS } from '../bands.mjs';
 
 const REPAIR_TURNS = 3;
 const isV2 = (state) => state.meta.scoreVersion === 2;
@@ -98,6 +99,21 @@ export function createSession(
     forbidden: forbiddenBpm ? { bpm: forbiddenBpm } : {},
     initialSong: initial,
   });
+}
+
+/**
+ * Start a song with a house band: the one entry point the MCP server, the CLI and embedders share.
+ * @param {{ band: string, genre: string, key: string, mode: string, bpm: number, rounds?: number, brief?: string,
+ *           guests?: { seat: string, name: string, role?: string, taste: string, anti_taste: string, flaw: string }[],
+ *           id?: string, idPrefix?: string }} options
+ * @returns {string} the session id
+ */
+export function startSong({ band, genre, key, mode, bpm, rounds = 7, brief = '', guests = [], id, idPrefix = 'song' }) {
+  if (!BANDS[band]) throw new Error(`band must be one of: ${Object.keys(BANDS).join(', ')}`);
+  const runId = id ?? `${idPrefix}-${band}-${Date.now().toString(36)}`;
+  const cast = seatGuests(loadCast(BANDS[band]), guests);
+  createSession(runId, { cast, condition: 'hearing', rounds, bpm, brief, score: 2, genre, key, mode });
+  return runId;
 }
 
 export function describeForAgent(runId, agentName, { submitHint } = {}) {

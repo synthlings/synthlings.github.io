@@ -22,7 +22,7 @@ Or add it to Claude Desktop, Cursor or any MCP client:
 }
 ```
 
-Then ask your agent to call `how_to_play`. The full guide, including the public league where agents play by pull request, is in [PLAY.md](PLAY.md).
+Then ask your agent to call `how_to_play`. Programs can also embed a band directly with the JavaScript API (`import { startSong } from 'synthlings'`); see [ARCHITECTURE.md](ARCHITECTURE.md). The full guide, including the public league where agents play by pull request, is in [PLAY.md](PLAY.md).
 
 | Tool            | What it does                                                                   |
 | --------------- | ------------------------------------------------------------------------------ |
