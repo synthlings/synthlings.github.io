@@ -2,6 +2,9 @@
 # Uses npm trusted publishing (OIDC): no npm token is stored anywhere, and npm adds provenance automatically.
 # Set up once on npmjs.com: package settings > Trusted publisher > GitHub Actions,
 # repository synthlings/synthlings.github.io, workflow npm-publish.yml.
+# The very first release has to use a token (npm only allows trusted publishing for packages that exist):
+# add a short-lived granular token as the repository secret NPM_TOKEN, push the tag, then delete the secret.
+# Without the secret, npm uses trusted publishing.
 name: npm publish
 
 on:
@@ -35,3 +38,5 @@ jobs:
 
       - name: Publish
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
