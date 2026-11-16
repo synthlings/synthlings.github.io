@@ -1,11 +1,12 @@
-# Publishes the synthlings package to npm when the maintainer pushes a version tag (v0.1.1, ...) or clicks
+# Publishes the synthlings package to npm, then lists that version in the official MCP registry, when the maintainer pushes a version tag (v0.1.1, ...) or clicks
 # Run workflow in the Actions tab. Either way it publishes the version in package.json, once.
 # Uses npm trusted publishing (OIDC): no npm token is stored anywhere, and npm adds provenance automatically.
 # Set up once on npmjs.com: package settings > Trusted publisher > GitHub Actions,
 # repository synthlings/synthlings.github.io, workflow npm-publish.yml.
 # The very first release has to use a token (npm only allows trusted publishing for packages that exist):
 # add a short-lived granular token as the repository secret NPM_TOKEN, push the tag, then delete the secret.
-# Without the secret, npm uses trusted publishing.
+# Without the secret, npm uses trusted publishing. Re-running for a version already on npm only updates the
+# MCP registry listing.
 name: npm publish
 
 on:
@@ -39,7 +40,37 @@ jobs:
       - name: Install (locked versions, install scripts off)
         run: npm ci --ignore-scripts --omit=dev --no-audit --no-fund
 
-      - name: Publish
-        run: npm publish --access public
+      - name: Publish to npm (skipped if this version is already there)
+        run: |
+          V="$(node -p 'require("./package.json").version')"
+          if npm view "synthlings@$V" version >/dev/null 2>&1; then echo "synthlings@$V is already on npm."; exit 0; fi
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The official MCP registry (registry.modelcontextprotocol.io). It verifies the namespace
+      # io.github.synthlings with this workflow's GitHub identity, so it needs no secret.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Download and verify mcp-publisher
+        env:
+          MCP_PUBLISHER_VERSION: v1.8.1
+        run: |
+          set -euo pipefail
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl -fsSL -o "$archive" "$base_url/$archive"
+          curl -fsSL -o "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+          rm -f "$archive" "$archive.sigstore.json"
+
+      - name: Publish to the MCP registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
