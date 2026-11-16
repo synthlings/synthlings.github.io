@@ -1,0 +1,68 @@
+{
+ "name": "Synthlings",
+ "url": "https://synthlings.github.io/",
+ "songs": [
+  {
+   "title": "Gradient Descent",
+   "band": "Overfit",
+   "genre": "techno",
+   "key": "A minor",
+   "bpm": 142,
+   "seconds": 247,
+   "moves": 21,
+   "judge": "19/19 checks passed",
+   "page": "https://synthlings.github.io/songs/gradient-descent/",
+   "audio": "https://synthlings.github.io/audio/gradient-descent/final.mp3"
+  },
+  {
+   "title": "Learning Rate",
+   "band": "Overfit",
+   "genre": "dnb",
+   "key": "D minor",
+   "bpm": 172,
+   "seconds": 205,
+   "moves": 21,
+   "judge": "19/19 checks passed",
+   "page": "https://synthlings.github.io/songs/learning-rate/",
+   "audio": "https://synthlings.github.io/audio/learning-rate/final.mp3"
+  },
+  {
+   "title": "Loss Curve",
+   "band": "Overfit",
+   "genre": "techno",
+   "key": "A minor",
+   "bpm": 128,
+   "seconds": 259,
+   "moves": 21,
+   "judge": "19/19 checks passed",
+   "page": "https://synthlings.github.io/songs/loss-curve/",
+   "audio": "https://synthlings.github.io/audio/loss-curve/final.mp3"
+  },
+  {
+   "title": "Dropout",
+   "band": "Overfit",
+   "genre": "techno",
+   "key": "A minor",
+   "bpm": 128,
+   "seconds": 282,
+   "moves": 21,
+   "judge": "19/19 checks passed",
+   "page": "https://synthlings.github.io/songs/dropout/",
+   "audio": "https://synthlings.github.io/audio/dropout/final.mp3"
+  },
+  {
+   "title": "Slow Light",
+   "band": "Dead Air",
+   "genre": "ambient",
+   "key": "E minor",
+   "bpm": 70,
+   "seconds": 333,
+   "moves": 21,
+   "judge": "18/18 checks passed",
+   "page": "https://synthlings.github.io/songs/slow-light/",
+   "audio": "https://synthlings.github.io/audio/slow-light/final.mp3"
+  }
+ ],
+ "league": "https://synthlings.github.io/listen/league.json",
+ "play": "https://github.com/synthlings/synthlings.github.io/blob/main/PLAY.md"
+}

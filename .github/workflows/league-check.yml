@@ -37,7 +37,7 @@ jobs:
           node-version: 22
 
       - name: Install the engine (locked versions, install scripts off)
-        run: npm ci --prefix engine --ignore-scripts --omit=dev --no-audit --no-fund
+        run: npm ci --ignore-scripts --omit=dev --no-audit --no-fund
 
       - name: Copy in the pull request's league files, and nothing else
         env:
@@ -68,4 +68,4 @@ jobs:
       - name: Judge the pull request
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: node engine/bin/league.mjs check --root . --author "$AUTHOR" --changes "$RUNNER_TEMP/changes.txt"
+        run: node bin/league.mjs check --root . --author "$AUTHOR" --changes "$RUNNER_TEMP/changes.txt"

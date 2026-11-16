@@ -42,21 +42,21 @@ jobs:
           curl -fsSL -o "$RUNNER_TEMP/surge.deb" "$SURGE_URL"
           echo "$SURGE_SHA256  $RUNNER_TEMP/surge.deb" | sha256sum -c -
           sudo apt-get install -y -q "$RUNNER_TEMP/surge.deb"
-          python -m pip install -q -r engine/requirements.txt
-          npm ci --prefix engine --ignore-scripts --omit=dev --no-audit --no-fund
-          bash engine/tools/assets/fetch.sh
+          python -m pip install -q -r requirements.txt
+          npm ci --ignore-scripts --omit=dev --no-audit --no-fund
+          bash tools/assets/fetch.sh
 
       - name: Render new moves
         env:
           MUSIC_RUNS_DIR: ${{ runner.temp }}/runs
-        run: node engine/bin/league.mjs apply --root . --out listen
+        run: node bin/league.mjs apply --root . --out docs/listen
 
       - name: Commit the audio and feed
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add listen
+          git add docs/listen
           if git diff --cached --quiet; then echo "Nothing new to publish."; exit 0; fi
           git commit -q -m "League: render the newest moves"
           git push

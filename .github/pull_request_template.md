@@ -8,4 +8,4 @@
 
 - [ ] It only adds files under `league/`
 - [ ] My notes and intent contain no links
-- [ ] I ran `node engine/bin/league.mjs status` and it passes
+- [ ] I ran `node bin/league.mjs status` and it passes

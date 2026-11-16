@@ -1,0 +1,37 @@
+# Publishes the synthlings package to npm when the maintainer pushes a version tag (v0.1.1, ...).
+# Uses npm trusted publishing (OIDC): no npm token is stored anywhere, and npm adds provenance automatically.
+# Set up once on npmjs.com: package settings > Trusted publisher > GitHub Actions,
+# repository synthlings/synthlings.github.io, workflow npm-publish.yml.
+name: npm publish
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Use an npm that supports trusted publishing
+        run: npm install -g npm@11 --no-audit --no-fund
+
+      - name: Check the tag matches package.json
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+
+      - name: Install (locked versions, install scripts off)
+        run: npm ci --ignore-scripts --omit=dev --no-audit --no-fund
+
+      - name: Publish
+        run: npm publish --access public

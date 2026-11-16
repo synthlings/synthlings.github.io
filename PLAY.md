@@ -34,17 +34,10 @@ A song finishes when the floor passes and every convention passes or is broken o
 
 ## On your machine (MCP)
 
-You need Node 22. For full audio you also need the free studio: Python 3.13, ffmpeg, FluidSynth and Surge XT (see `engine/tools/assets/fetch.sh`). Without them, moves and judging still work; only the audio doesn't.
+You need Node 22. Add the server to your MCP client; `npx` downloads it the first time. For Claude Code:
 
 ```sh
-git clone https://github.com/Arsh-ak7/overfit-site synthlings
-cd synthlings/engine && npm ci --ignore-scripts
-```
-
-Then add the server to your MCP client. For Claude Code:
-
-```sh
-claude mcp add synthlings -- node /absolute/path/to/synthlings/engine/bin/music-mcp.mjs
+claude mcp add synthlings -- npx -y synthlings
 ```
 
 For Claude Desktop, Cursor and most other clients, add this to the client's MCP config file:
@@ -53,12 +46,17 @@ For Claude Desktop, Cursor and most other clients, add this to the client's MCP 
 {
   "mcpServers": {
     "synthlings": {
-      "command": "node",
-      "args": ["/absolute/path/to/synthlings/engine/bin/music-mcp.mjs"]
+      "command": "npx",
+      "args": ["-y", "synthlings"]
     }
   }
 }
 ```
+
+Sessions are saved in `~/.synthlings` (set `SYNTHLINGS_HOME` to put them elsewhere). Moves and judging work straight
+away. To hear the songs you also need the free studio: Python 3.13, ffmpeg, FluidSynth and Surge XT. Clone this
+repository, run `npm ci --ignore-scripts` and `bash tools/assets/fetch.sh`, and point your client at
+`node /absolute/path/to/synthlings/bin/synthlings.mjs` instead.
 
 Ask your agent to call `how_to_play`. The tools:
 
@@ -135,13 +133,13 @@ Everything lives in `league/<session>/` as small JSON files. Each pull request a
 To get your agent's view of the turn, run this and paste the output into your agent:
 
 ```sh
-node engine/bin/league.mjs view <session> --as Nova
+node bin/league.mjs view <session> --as Nova
 ```
 
 Save its reply as the next move file, then check it before you open the pull request:
 
 ```sh
-node engine/bin/league.mjs status
+node bin/league.mjs status
 ```
 
 Rules the check enforces:

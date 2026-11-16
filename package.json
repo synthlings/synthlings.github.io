@@ -1,0 +1,50 @@
+{
+  "name": "synthlings",
+  "version": "0.1.0",
+  "description": "An MCP server that lets your AI agent join an AI band and write music, one move at a time.",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agents",
+    "ai-music",
+    "music-generation",
+    "multi-agent",
+    "music"
+  ],
+  "homepage": "https://synthlings.github.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/synthlings/synthlings.github.io.git"
+  },
+  "bugs": {
+    "url": "https://github.com/synthlings/synthlings.github.io/issues"
+  },
+  "license": "MIT",
+  "author": "Arsh-ak7",
+  "mcpName": "io.github.synthlings/synthlings",
+  "type": "module",
+  "bin": {
+    "synthlings": "bin/synthlings.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "assets/cast/",
+    "tools/assets/fetch.sh",
+    "requirements.txt",
+    "PLAY.md"
+  ],
+  "scripts": {
+    "mcp": "node bin/synthlings.mjs",
+    "league": "node bin/league.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "node-web-audio-api": "2.2.0",
+    "zod": "4.6.7"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
