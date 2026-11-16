@@ -316,7 +316,7 @@ section[id] { scroll-margin-top: calc(var(--bar-h) + 24px); }
 .ctas { display: flex; gap: 12px; margin-top: 16px; }
 .ctas .pill { height: 48px; }
 #heroPlay { width: 100%; }
-#heroAgent { display: none; }
+@media (max-width: 759px) { .ctas { flex-direction: column; gap: 10px; } #heroAgent { width: 100%; justify-content: center; } }
 .player { margin-top: 16px; }
 @media (max-width: 759px) { :root { --ruler-h: 16px; } .blurb { line-height: 1.45; } .lede { line-height: 1.45; } .song-title { margin-top: 0; } .roll-meta { margin-top: 4px; } .eyebrow .e-long { display: none; } }
 @media (min-width: 760px) { .eyebrow .e-short { display: none; } }
@@ -326,7 +326,6 @@ section[id] { scroll-margin-top: calc(var(--bar-h) + 24px); }
   .ctas { margin-top: 24px; }
   .ctas .pill { height: 44px; }
   #heroPlay { width: auto; }
-  #heroAgent { display: inline-flex; }
   .player { margin-top: 36px; }
 }
 @media (min-width: 1100px) {
@@ -756,7 +755,7 @@ main > section + section { margin-top: var(--section); }
      the list on 5-12: its text edge is the col 5 line shared with the band, steps, judge and footer */
   .mv-layout { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--col-gap); align-items: start; }
   .m-aside { grid-column: 1 / span 4; margin-right: var(--col-gap); }
-  .moves { grid-column: 5 / -1; }
+  .mv-list { grid-column: 5 / -1; }
   .m-aside { position: sticky; top: calc(var(--bar-h) + 24px); grid-template-columns: minmax(0, 1fr); grid-template-areas: "sw" "story" "trend" "filter" "index"; gap: 24px; }
   .story { width: auto; }
   .mindex { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -770,6 +769,7 @@ main > section + section { margin-top: var(--section); }
 .side-label { margin-bottom: 8px; display: block; }
 
 .moves { list-style: none; margin: 0; padding: 0; }
+.move[hidden] { display: none; }
 .move { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 24px 12px; margin-inline: -12px; border-radius: var(--r-md); position: relative; transition: background-color .3s; }
 .move + .move::before { content: ""; position: absolute; top: 0; left: 12px; right: 12px; border-top: 1px solid var(--rule); }
 @media (min-width: 760px) { .move + .move::before { left: 16px; right: 16px; } }
@@ -785,6 +785,13 @@ main > section + section { margin-top: var(--section); }
 .move .note { font-size: 17.5px; line-height: 1.55; max-width: 68ch; margin-top: 8px; }
 .booth { margin-top: 16px; padding-left: 16px; border-left: 2px solid color-mix(in srgb, var(--c) 45%, transparent); }
 .booth .micro { display: flex; align-items: center; gap: 6px; }
+.booth summary { list-style: none; cursor: pointer; width: fit-content; min-height: 32px; display: flex; align-items: center; }
+.booth summary::-webkit-details-marker { display: none; }
+.booth summary .micro::after { content: "+"; font: 400 15px/1 var(--body); margin-left: 4px; }
+.booth[open] summary .micro::after { content: "\2212"; }
+.booth summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.moves-more { display: flex; justify-content: center; margin-top: 16px; }
+.moves-more[hidden] { display: none; }
 .booth .micro svg { width: 13px; height: 13px; }
 .booth p { font: italic 400 19px/1.38 var(--display); color: var(--muted); max-width: 60ch; margin-top: 4px; }
 .move .side { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
@@ -1055,7 +1062,10 @@ main > section + section { margin-top: var(--section); }
           </div>
           <nav class="mindex" id="mindex" aria-label="Jump to a move"></nav>
         </aside>
-        <ol class="moves" id="moveList"></ol>
+        <div class="mv-list">
+          <ol class="moves" id="moveList"></ol>
+          <div class="moves-more" id="movesMore" hidden><button class="pill ghost" type="button">Show all moves</button></div>
+        </div>
       </div>
     </div>
   </section>
@@ -1315,6 +1325,10 @@ let story = null;
 let cue = null;        // seconds: deck seek position set by keyboard while the song isn't loaded
 let loading = false, errored = false, dockHidden = false;
 let filter = 'all';
+// On phones the move list starts with the first PHONE_MOVES moves; anything that jumps to a later move opens the rest.
+const PHONE_MOVES = 6;
+let movesOpen = false;
+function openMoves() { if (!movesOpen) { movesOpen = true; applyFilter(false); } }
 const songPos = {};    // where each song was when something else started, for "Back to the full song"
 let autoplay = store.get('synthlings:autoplay') !== '0';
 let volume = parseFloat(store.get('synthlings:volume') ?? '1');
@@ -1637,6 +1651,7 @@ function playSong(i, at) {
   return load(s.final, songDesc(cur), start);
 }
 function playMove(n, fromStory) {
+  openMoves();
   if (!fromStory) stopStory();
   const s = S();
   if (!fromStory && now && now.kind === 'move' && now.i === cur && now.n === n) return toggle();
@@ -1931,6 +1946,7 @@ $('#dHide').onclick = () => { dockHidden = true; updateDock(); };
 $('#dLbl').onclick = () => {
   if (PHONE.matches) return openSheet();
   if (now && now.kind === 'move' && now.i === cur) {
+    openMoves();
     const row = document.querySelector(`.move[data-n="${now.n}"]`);
     if (row) { row.scrollIntoView({ block: 'center', behavior: smooth() }); return; }
   }
@@ -2131,9 +2147,11 @@ function renderMoves() {
     const role = (s.agents.find((a) => a.name === mv.agent) || {}).role || '';
     const nm = el('span', 'nm'); nm.append(el('span', 'num-in', pad2(mv.n)), el('strong', null, mv.agent));
     who.append(nm, el('span', 'did', role ? `${role} · ${mv.did}` : mv.did));
-    const booth = el('div', 'booth');
+    // A tap-to-open private thought on phones keeps the list short; open everywhere else.
+    const booth = el('details', 'booth'); booth.open = !PHONE.matches;
+    const sum = el('summary');
     const lab = el('span', 'micro'); lab.innerHTML = icon('private', 13); lab.append(document.createTextNode('Private thought'));
-    booth.append(lab, el('p', null, mv.intent));
+    sum.append(lab); booth.append(sum, el('p', null, mv.intent));
     body.append(who, el('p', 'note', mv.note), booth);
     const side = el('div', 'side');
     if (mv.src) {
@@ -2172,6 +2190,7 @@ function renderMoves() {
     b.style.setProperty('--c', color(mv.agent));
     b.setAttribute('aria-label', `Move ${mv.n}, ${mv.agent}`);
     b.onclick = () => {
+      openMoves();
       const row = document.querySelector(`.move[data-n="${mv.n}"]`);
       if (!row) return;
       row.scrollIntoView({ block: 'center', behavior: smooth() });
@@ -2182,10 +2201,19 @@ function renderMoves() {
   renderTrend();
   applyFilter(false);
 }
+$('#movesMore button').onclick = () => {
+  openMoves();
+  const next = document.querySelector(`.move[data-n="${PHONE_MOVES + 1}"]`);
+  if (next) next.focus({ preventScroll: true });
+};
 function applyFilter(speak) {
   const s = S();
   let shown = 0;
-  for (const li of $$('#moveList .move')) { const on = filter === 'all' || li.dataset.agent === filter; li.hidden = !on; if (on) shown++; }
+  const cap = PHONE.matches && !movesOpen && filter === 'all' ? PHONE_MOVES : Infinity;
+  for (const li of $$('#moveList .move')) { const on = filter === 'all' || li.dataset.agent === filter; li.hidden = !on || +li.dataset.n > cap; if (on) shown++; }
+  const more = $('#movesMore');
+  more.hidden = cap >= s.moves.length;
+  more.firstElementChild.textContent = `Show all ${s.moves.length} moves`;
   for (const b of $$('#mindex button')) b.hidden = !(filter === 'all' || s.moves[b.dataset.n - 1].agent === filter);
   for (const b of $$('#chips button')) b.setAttribute('aria-pressed', String(b.dataset.f === filter));
   const msg = filter === 'all' ? `Showing all ${s.moves.length} moves` : `Showing ${shown} of ${s.moves.length} moves`;
@@ -2239,6 +2267,7 @@ function storyLabel() {
 async function runStory() {
   const st = story = { cancelled: false, timer: null };
   if (filter !== 'all') { filter = 'all'; applyFilter(true); }
+  openMoves();
   $('#storyBtn').textContent = 'Stop the story';
   for (const mv of S().moves) {
     if (st.cancelled) return;
