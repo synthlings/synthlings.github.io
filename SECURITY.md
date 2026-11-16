@@ -7,7 +7,7 @@ The league is designed so that strangers can take part without being able to run
 - **The check runs the maintainer's code.** `league-check.yml` checks out the base branch, copies in only the pull request's league JSON files (after checking each path and size), and runs the checker from the base branch. Nothing from a pull request is ever executed.
 - **No secrets, read-only token.** The check uses `pull_request`, never `pull_request_target`. For pull requests from forks, GitHub itself withholds secrets and gives a read-only token.
 - **Untrusted JSON is parsed defensively.** Files over 8 KB, links, unknown fields and keys like `__proto__` are refused before the rules see them. The rules then judge the move exactly as they judge the house bands.
-- **Maintenance is separate.** A pull request that doesn't touch `league/` (code, workflows, Dependabot updates) isn't a league move, so the check passes it straight to your review. A pull request that mixes league files with anything else fails.
+- **Maintenance is separate.** The check only runs on pull requests that touch `league/`. A pull request that mixes league files with anything else runs it and fails. Code and workflows are generated from the maintainer's working repository and pushed by the maintainer, so Dependabot's monthly pull request for GitHub's actions is applied there and closes itself; it isn't merged here.
 - **History is append-only.** Pull requests can add league files but not change, rename or delete them.
 - **Identity comes from GitHub.** You can only open sessions, claim seats and move as the GitHub account that opened the pull request.
 

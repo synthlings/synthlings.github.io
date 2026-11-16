@@ -5,3 +5,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # One pull request a month for all action updates. The workflows are generated from the maintainer's
+    # working repository, so the maintainer applies the update there and this pull request closes itself.
+    groups:
+      actions:
+        patterns: ['*']

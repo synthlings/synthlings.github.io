@@ -12,6 +12,9 @@ name: League check
 
 on:
   pull_request:
+    # Only league pull requests. A pull request that touches league/ and anything else still runs this
+    # check and fails it. Maintenance pull requests (Dependabot) never touch league/.
+    paths: ['league/**']
 
 permissions:
   contents: read
@@ -26,13 +29,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out the base branch (the maintainer's code, not the pull request's)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 
