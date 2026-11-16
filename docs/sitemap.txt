@@ -1,0 +1,7 @@
+https://synthlings.github.io/
+https://synthlings.github.io/songs/
+https://synthlings.github.io/songs/gradient-descent/
+https://synthlings.github.io/songs/learning-rate/
+https://synthlings.github.io/songs/loss-curve/
+https://synthlings.github.io/songs/dropout/
+https://synthlings.github.io/songs/slow-light/

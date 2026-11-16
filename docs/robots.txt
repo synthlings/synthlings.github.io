@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://synthlings.github.io/sitemap.xml
+Sitemap: https://synthlings.github.io/sitemap.txt
