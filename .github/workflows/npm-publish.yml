@@ -21,7 +21,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -53,11 +53,11 @@ jobs:
       - name: Wait until this version is live on npm
         run: |
           V="$(node -p 'require("./package.json").version')"
-          for i in $(seq 1 30); do
+          for i in $(seq 1 90); do
             if npm view "synthlings@$V" version >/dev/null 2>&1; then echo "synthlings@$V is live."; exit 0; fi
             sleep 10
           done
-          echo "::error::synthlings@$V isn't live on npm after 5 minutes. If npm staged it, approve it on npmjs.com (package > staged versions), then run this workflow again."
+          echo "::error::synthlings@$V isn't live on npm after 15 minutes. If npm staged it, approve it on npmjs.com (package > staged versions), then run this workflow again."
           exit 1
 
       # The official MCP registry (registry.modelcontextprotocol.io). It verifies the namespace
