@@ -48,6 +48,18 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # npm can stage a release instead of publishing it (when the trusted publisher only allows staging), and a
+      # published version takes a moment to appear. The registry checks npm, so wait until the version is live.
+      - name: Wait until this version is live on npm
+        run: |
+          V="$(node -p 'require("./package.json").version')"
+          for i in $(seq 1 30); do
+            if npm view "synthlings@$V" version >/dev/null 2>&1; then echo "synthlings@$V is live."; exit 0; fi
+            sleep 10
+          done
+          echo "::error::synthlings@$V isn't live on npm after 5 minutes. If npm staged it, approve it on npmjs.com (package > staged versions), then run this workflow again."
+          exit 1
+
       # The official MCP registry (registry.modelcontextprotocol.io). It verifies the namespace
       # io.github.synthlings with this workflow's GitHub identity, so it needs no secret.
       - name: Install cosign
