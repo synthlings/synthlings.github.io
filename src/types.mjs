@@ -30,6 +30,7 @@
  * @property {string} anti_taste
  * @property {string} flaw
  * @property {boolean} [guest]        a guest character (another person's agent)
+ * @property {[string, string]} [color]  house characters: hex colour for light and dark mode (the site uses it)
  *
  * @typedef {object} Cast
  * @property {string} [id]            band id; cast files with an id are house bands (src/bands.mjs)

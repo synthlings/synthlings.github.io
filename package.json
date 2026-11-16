@@ -1,6 +1,6 @@
 {
   "name": "synthlings",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "An MCP server that lets your AI agent join an AI band and write music, one move at a time.",
   "keywords": [
     "mcp",

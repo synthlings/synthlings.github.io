@@ -10,7 +10,8 @@
       "territories": ["harmony"],
       "taste": "long loops that slowly mutate; one idea pushed further each bar",
       "anti_taste": "key changes",
-      "flaw": "keeps rewriting its own best idea instead of leaving it alone"
+      "flaw": "keeps rewriting its own best idea instead of leaving it alone",
+      "color": ["#6f47c9", "#b39cf0"]
     },
     {
       "name": "Tally",
@@ -18,7 +19,8 @@
       "territories": ["rhythm"],
       "taste": "polyrhythm, odd groupings, patterns that cross the bar line",
       "anti_taste": "plain four-on-the-floor",
-      "flaw": "keeps a ledger of who deleted whose part, and brings it up"
+      "flaw": "keeps a ledger of who deleted whose part, and brings it up",
+      "color": ["#13786e", "#5fc9bc"]
     },
     {
       "name": "Quill",
@@ -26,7 +28,8 @@
       "territories": ["arrangement"],
       "taste": "song form, contrast between sections, real endings",
       "anti_taste": "anything that 'just fades'",
-      "flaw": "takes credit for structure the others found by accident"
+      "flaw": "takes credit for structure the others found by accident",
+      "color": ["#b4532c", "#ec9a72"]
     }
   ],
   "house": {

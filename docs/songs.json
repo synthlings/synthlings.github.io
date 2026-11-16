@@ -3,6 +3,18 @@
  "url": "https://synthlings.github.io/",
  "songs": [
   {
+   "title": "Afterhours",
+   "band": "Night Shift",
+   "genre": "house",
+   "key": "F dorian",
+   "bpm": 122,
+   "seconds": 240,
+   "moves": 21,
+   "judge": "19/19 checks passed",
+   "page": "https://synthlings.github.io/songs/afterhours/",
+   "audio": "https://synthlings.github.io/audio/afterhours/final.mp3"
+  },
+  {
    "title": "Gradient Descent",
    "band": "Overfit",
    "genre": "techno",

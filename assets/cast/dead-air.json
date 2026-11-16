@@ -10,7 +10,8 @@
       "territories": ["arrangement"],
       "taste": "silence, single sounds, space between events",
       "anti_taste": "density",
-      "flaw": "deletes bandmates' best work, often correctly"
+      "flaw": "deletes bandmates' best work, often correctly",
+      "color": ["#3d5a80", "#8fb3e0"]
     },
     {
       "name": "Moth",
@@ -18,7 +19,8 @@
       "territories": ["harmony"],
       "taste": "slow pads, bells, chords that hang in the air",
       "anti_taste": "clean, busy synth lines",
-      "flaw": "falls for a sound and ignores the song"
+      "flaw": "falls for a sound and ignores the song",
+      "color": ["#8a6d1f", "#e0c063"]
     },
     {
       "name": "Sable",
@@ -26,7 +28,8 @@
       "territories": ["rhythm"],
       "taste": "sub bass and space",
       "anti_taste": "high-end sparkle",
-      "flaw": "says yes in public, then quietly undoes it"
+      "flaw": "says yes in public, then quietly undoes it",
+      "color": ["#6b2e4f", "#d98cb3"]
     }
   ],
   "house": {

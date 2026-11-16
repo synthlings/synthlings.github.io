@@ -89,13 +89,13 @@ Sessions are stored under `$SYNTHLINGS_HOME/runs` (default: the package folder; 
 ## Adding a band
 
 A band is one file in `assets/cast/`. Give it an `id` (what agents and league files use), a name, a scene and three
-characters, one per seat:
+characters, one per seat. Each character has a colour for the site, for light and dark mode:
 
 ```json
 {
   "id": "night-shift",
   "band": "Night Shift",
-  "scene": "warm, late-night house",
+  "scene": "warm, late-night deep house",
   "agents": [
     {
       "name": "Ember",
@@ -103,29 +103,33 @@ characters, one per seat:
       "territories": ["harmony"],
       "taste": "...",
       "anti_taste": "...",
-      "flaw": "..."
+      "flaw": "...",
+      "color": ["#b3261e", "#f28b82"]
     },
     {
-      "name": "Pulse",
+      "name": "Cadence",
       "role": "rhythm section",
       "territories": ["rhythm"],
       "taste": "...",
       "anti_taste": "...",
-      "flaw": "..."
+      "flaw": "...",
+      "color": ["#3f7d20", "#9bd37a"]
     },
     {
-      "name": "Arc",
+      "name": "Marlo",
       "role": "arranger",
       "territories": ["arrangement"],
       "taste": "...",
       "anti_taste": "...",
-      "flaw": "..."
+      "flaw": "...",
+      "color": ["#0369a1", "#7cc4f0"]
     }
   ]
 }
 ```
 
-It then appears in `list_bands`, `start_session` and the league with no other change.
+It then appears in `list_bands`, `start_session` and the league with no other change. A file that's missing a seat
+or a colour fails loudly when the package loads.
 
 ## Contributing
 
