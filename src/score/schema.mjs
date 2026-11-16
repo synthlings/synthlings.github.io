@@ -148,7 +148,7 @@ function validatePart(id, part, song) {
 }
 
 /** Validate a v2 song. Throws ValidationError with an agent-readable message. */
-export function validateSongV2(song) {
+export function validateSong(song) {
   if (!song || song.version !== 2) fail('song.version must be 2');
   const genre = GENRES[song.genre];
   if (!genre) fail(`genre must be one of ${Object.keys(GENRES).join(', ')}`);

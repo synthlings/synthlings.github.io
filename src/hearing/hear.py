@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """The "hearing" report: DSP measurements an agent can read instead of listening.
 
-Usage: python3 -I src/hearing/hear.py SONG.json MIX.wav [STEM_DIR]
-Prints JSON. STEM_DIR holds <layer_id>.wav solo renders (optional).
+Usage: python3 -I src/hearing/hear.py SONG.json MIX.wav
+SONG.json needs bpm and sections ([{name, bars}]). Prints JSON.
 
 Everything here is measurement, not taste. Ledger's flags are simple heuristics
 and are meant to be argued with.
 """
 
 import json
-import os
 import sys
 
 import librosa
@@ -103,46 +102,7 @@ def analyse_mix(song, path):
     }, sr
 
 
-def analyse_stems(song, stem_dir, mix_rms_db):
-    out, spectra = [], {}
-    for layer in song["layers"]:
-        f = os.path.join(stem_dir, f"{layer['id']}.wav")
-        if not os.path.exists(f):
-            continue
-        y, sr = librosa.load(f, sr=22050, mono=True)
-        bands, S, _freqs = band_shares(y, sr)
-        frame_rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=1024)[0]
-        on = (
-            frame_rms > max(1e-4, 0.05 * frame_rms.max())
-            if frame_rms.max() > 0
-            else np.zeros_like(frame_rms, dtype=bool)
-        )
-        active = float(np.mean(on))
-        # level while the layer is actually playing, so a part that only plays in one section isn't penalised
-        rms = float(np.sqrt(np.mean(frame_rms[on] ** 2))) if on.any() else 0.0
-        spec = S.mean(axis=1)
-        spectra[layer["id"]] = spec / (np.linalg.norm(spec) + 1e-12)
-        out.append(
-            {
-                "id": layer["id"],
-                "instrument": layer["instrument"],
-                "owner": layer.get("owner"),
-                "level_db_vs_mix": round(db(rms) - mix_rms_db, 1),  # while playing
-                "main_band": max(bands, key=bands.get),
-                "active_fraction": round(active, 2),
-            }
-        )
-    ids = list(spectra)
-    for row in out:
-        others = [(o, float(spectra[row["id"]] @ spectra[o])) for o in ids if o != row["id"]]
-        if others:
-            o, sim = max(others, key=lambda x: x[1])
-            row["most_overlaps_with"] = o
-            row["overlap"] = round(sim, 2)
-    return out
-
-
-def ledger_flags(mix, stems, song):
+def ledger_flags(mix, song):
     flags = []
     if mix["clipped_fraction"] > 0.0005 or mix["peak_dbfs"] > -0.1:
         flags.append(f"Clipping: peak {mix['peak_dbfs']} dBFS. Turn something down.")
@@ -183,35 +143,17 @@ def ledger_flags(mix, stems, song):
         flags.append(f"Adjacent sections that sound nearly identical: {', '.join(same)}.")
     if len(secs) > 2 and max(s["loudness_db"] for s in secs) - min(s["loudness_db"] for s in secs) < 1.5:
         flags.append("Flat energy arc: every section is within 1.5 dB of the others.")
-    for s in stems:
-        if s["level_db_vs_mix"] < -24:
-            flags.append(f"Layer '{s['id']}' is barely audible ({s['level_db_vs_mix']} dB vs mix).")
-    cut = None
-    if len(stems) >= 3:
-        # candidate to cut: overlaps most with another layer and is the quieter of the pair
-        cands = [s for s in stems if s.get("overlap", 0) > 0.8]
-        if cands:
-            worst = max(cands, key=lambda s: (s["overlap"], -s["level_db_vs_mix"]))
-            other = next(s for s in stems if s["id"] == worst["most_overlaps_with"])
-            quieter = worst if worst["level_db_vs_mix"] <= other["level_db_vs_mix"] else other
-            louder = other if quieter is worst else worst
-            similarity = round(worst["overlap"] * 100)
-            cut = f"'{quieter['id']}' (spectrum {similarity}% similar to '{louder['id']}', and quieter)"
-        else:
-            q = min(stems, key=lambda s: s["level_db_vs_mix"])
-            cut = f"'{q['id']}' (quietest layer, {q['level_db_vs_mix']} dB vs mix)"
-    return flags, cut
+    return flags
 
 
 def main():
     with open(sys.argv[1]) as f:
         song = json.load(f)
     mix, _ = analyse_mix(song, sys.argv[2])
-    stems = analyse_stems(song, sys.argv[3], mix["loudness_rms_dbfs"]) if len(sys.argv) > 3 else []
-    flags, cut = ledger_flags(mix, stems, song)
+    flags = ledger_flags(mix, song)
     for s in mix["sections"]:
         s.pop("_chroma", None)
-    print(json.dumps({"mix": mix, "layers": stems, "ledger": {"flags": flags, "cut_one_thing": cut}}, indent=1))
+    print(json.dumps({"mix": mix, "ledger": {"flags": flags}}, indent=1))
 
 
 if __name__ == "__main__":

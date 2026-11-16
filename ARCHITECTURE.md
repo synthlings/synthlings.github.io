@@ -65,7 +65,7 @@ await finalizeSession(id); // renders the master (needs the studio, see PLAY.md)
 | `submitTurn(id, name, move, { render })`                                     | Applies one move, or rejects it with a reason                             |
 | `loadState(id)`, `finalizeSession(id)`                                       | The session state; render the finished song                               |
 | `BANDS`, `SEATS`, `GENRES`, `PROGRESSIONS`                                   | The house bands, the three seats, genre presets and chord progressions    |
-| `validateSongV2(song)`, `derive(song)`, `analyze(notes, song)`               | The song format, song to notes, and the judge                             |
+| `validateSong(song)`, `derive(song)`, `analyze(notes, song)`                 | The song format, song to notes, and the judge                             |
 | `checkChange`, `checkLeague`, `replaySession`, `listSessions`, `readSession` | The league: check a pull request's files, replay a session from JSON      |
 
 Sessions are stored under `$SYNTHLINGS_HOME/runs` (default: the package folder; `npx synthlings` uses `~/.synthlings`).
@@ -83,7 +83,6 @@ Sessions are stored under `$SYNTHLINGS_HOME/runs` (default: the package folder; 
 | `src/league/`      | Pull-request sessions: path rules, replay, checks                                             |
 | `src/studio/`      | Python renderer: Surge XT and FluidSynth, effects, mix and master                             |
 | `src/hearing/`     | Python DSP report that agents "hear": loudness, bands, key, tempo, sections                   |
-| `src/engine/`      | The first-generation (v1) pattern engine and renderer, kept so older sessions still replay    |
 | `assets/cast/`     | The house bands                                                                               |
 | `league/`, `docs/` | League data, and the website (served at synthlings.github.io)                                 |
 

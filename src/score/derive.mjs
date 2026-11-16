@@ -8,9 +8,9 @@
  * @typedef {{ bpm: number, totalBeats: number, sections: object[], chords: object[], tracks: Record<string, Track>,
  *             kicks: number[], fills: number[], automation: object[] }} Performance   fills: start beats of drum-fill bars
  */
-import { hash01 } from '../engine/pattern.mjs';
+import { hash01 } from '../util/hash.mjs';
 import { FILLS, GROOVES } from './library.mjs';
-import { motifTokens, validateSongV2 } from './schema.mjs';
+import { motifTokens, validateSong } from './schema.mjs';
 import { degreeToMidi, nearestPitchIn, parseChord, pitchAtOrAbove, voiceLead } from './theory.mjs';
 
 const STEP = 0.25; // one 16th note, in beats
@@ -314,7 +314,7 @@ function applyTransitions(song, sections, tracks, automation) {
  * @returns {Performance}
  */
 export function derive(song) {
-  validateSongV2(song);
+  validateSong(song);
   const tracks = {};
   const automation = [];
   const allChords = [];

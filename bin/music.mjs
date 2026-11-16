@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 /**
- * The spike's single command-line entry point.
+ * The maintainer's command line: run a house-band session by hand, one move file at a time.
  *
- *   music session new <run> [--cast overfit] [--condition hearing|deaf] [--rounds 4] [--bpm 138]
- *                           [--brief TEXT] [--forbid-bpm 120-128]
- *                           [--score 2 --genre techno --key A --mode minor]   (score v2: tool-call turns)
+ *   music session new <run> [--band overfit] [--genre techno] [--key A] [--mode minor] [--bpm 128]
+ *                           [--rounds 7] [--condition hearing|deaf] [--brief TEXT]
  *   music session state <run> --agent NAME     what that agent sees on its turn
  *   music session turn <run> --agent NAME --file move.json
  *   music session finalize <run>
  *   music session verify <run>
  *   music session rerender <run>                 render the latest turn again (after a renderer fix)
- *   music render <song.json> <out.wav> [--mp3] [--solo LAYER] [--sample-rate N]   (v1 songs)
- *   music produce <song.json> <out-dir>                                          (v2 songs: studio render)
+ *   music produce <song.json> <out-dir>          render a song file with the studio, without a session
  *
  * Exit codes: 0 ok, 1 rejected turn or failure, 2 usage error.
  */
@@ -19,19 +17,11 @@ import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { renderToFile } from '../src/engine/node-env.mjs';
 import { PATHS } from '../src/paths.mjs';
 import { analyze } from '../src/score/analyze.mjs';
 import { derive } from '../src/score/derive.mjs';
 import { readLog } from '../src/session/log.mjs';
-import {
-  createSession,
-  describeForAgent,
-  finalizeSession,
-  loadCast,
-  rerenderLatest,
-  submitTurn,
-} from '../src/session/service.mjs';
+import { describeForAgent, finalizeSession, rerenderLatest, startSong, submitTurn } from '../src/session/service.mjs';
 
 const USAGE = fs
   .readFileSync(new URL(import.meta.url), 'utf8')
@@ -64,33 +54,29 @@ const sessionCommands = {
     } = parse(
       args,
       {
-        cast: { type: 'string', default: 'overfit' },
-        condition: { type: 'string', default: 'hearing' },
-        rounds: { type: 'string', default: '4' },
-        bpm: { type: 'string', default: '138' },
-        brief: { type: 'string', default: '' },
-        'forbid-bpm': { type: 'string' },
-        score: { type: 'string', default: '1' },
+        band: { type: 'string', default: 'overfit' },
         genre: { type: 'string', default: 'techno' },
         key: { type: 'string', default: 'A' },
         mode: { type: 'string', default: 'minor' },
+        bpm: { type: 'string', default: '128' },
+        rounds: { type: 'string', default: '7' },
+        condition: { type: 'string', default: 'hearing' },
+        brief: { type: 'string', default: '' },
       },
       1,
     );
-    const forbid = values['forbid-bpm'];
-    const event = createSession(run, {
-      cast: loadCast(values.cast),
-      condition: values.condition,
-      rounds: Number(values.rounds),
-      bpm: Number(values.bpm),
-      brief: values.brief,
-      forbiddenBpm: forbid ? forbid.split('-').map(Number) : undefined,
-      score: Number(values.score),
+    startSong({
+      id: run,
+      band: values.band,
       genre: values.genre,
       key: values.key,
       mode: values.mode,
+      bpm: Number(values.bpm),
+      rounds: Number(values.rounds),
+      condition: values.condition,
+      brief: values.brief,
     });
-    console.log(`Created run ${run} (seq ${event.seq}).`);
+    console.log(`Created run ${run}.`);
   },
 
   state(args) {
@@ -120,12 +106,11 @@ const sessionCommands = {
       console.log(`REJECTED: ${result.reason}\nFix it and submit again.`);
       return 1;
     }
-    const { turn, kind, target, render, pruned, validator } = result;
+    const { turn, kind, target, render, validator } = result;
     const rendered = render.silent
       ? 'Nothing plays yet, so there is no audio to render.'
       : `Rendered ${render.audio_seconds}s of audio in ${(render.timing_ms.total / 1000).toFixed(1)}s.`;
     console.log(`ACCEPTED turn ${turn} (${kind}${target ? `: ${target}` : ''}). ${rendered}`);
-    if (pruned.length) console.log(`Structure side effects: ${pruned.join('; ')}`);
     if (validator) {
       console.log(
         validator.pass
@@ -178,24 +163,6 @@ const commands = {
   async session([sub, ...args]) {
     if (!Object.hasOwn(sessionCommands, sub)) throw new UsageError(`unknown session command '${sub ?? ''}'`);
     return sessionCommands[sub](args);
-  },
-
-  async render(args) {
-    const {
-      values,
-      positionals: [songFile, outWav],
-    } = parse(
-      args,
-      { mp3: { type: 'boolean', default: false }, solo: { type: 'string' }, 'sample-rate': { type: 'string' } },
-      2,
-    );
-    const song = JSON.parse(fs.readFileSync(songFile, 'utf8'));
-    const result = await renderToFile(song, outWav, {
-      mp3: values.mp3,
-      solo: values.solo,
-      sampleRate: values['sample-rate'] ? Number(values['sample-rate']) : undefined,
-    });
-    console.log(JSON.stringify(result));
   },
 };
 

@@ -28,7 +28,7 @@ function discover() {
   return Object.freeze(out);
 }
 
-/** Band id -> cast file name, e.g. { overfit: 'overfit-v2', 'dead-air': 'dead-air' }. */
+/** Band id -> cast file name, e.g. { overfit: 'overfit', 'dead-air': 'dead-air' }. */
 export const BANDS = discover();
 
 /** @returns {[string, ...string[]]} band ids, for z.enum */

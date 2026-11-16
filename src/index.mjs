@@ -27,7 +27,7 @@ export {
 } from './session/service.mjs';
 
 // The song format and the judge.
-export { validateSongV2 } from './score/schema.mjs';
+export { validateSong } from './score/schema.mjs';
 export { derive } from './score/derive.mjs';
 export { analyze, FLOOR, isConvention } from './score/analyze.mjs';
 

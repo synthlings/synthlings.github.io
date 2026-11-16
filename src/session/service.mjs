@@ -7,35 +7,25 @@ import path from 'node:path';
 import { isSubmissionError } from '../errors.mjs';
 import { PATHS } from '../paths.mjs';
 import { appendEvent, readLog, runDir, runExists } from './log.mjs';
-import { produceAndHear, renderAndHear } from './pipeline.mjs';
+import { produceAndHear } from './pipeline.mjs';
 import { project } from './projection.mjs';
-import { applyTurnV2, seedSong } from './rules-v2.mjs';
-import { applyTurn, initialSong } from './rules.mjs';
-import { agentViewV2 } from './view-v2.mjs';
+import { applyTurn, seedSong } from './rules.mjs';
 import { agentView } from './view.mjs';
 import { BANDS } from '../bands.mjs';
 
 const REPAIR_TURNS = 3;
-const isV2 = (state) => state.meta.scoreVersion === 2;
+// Sessions record the score format they use; this engine writes and reads format 2 only.
+const SCORE_VERSION = 2;
 
 const CONDITIONS = new Set(['hearing', 'deaf']);
 
 export const loadState = (runId) => project(readLog(runId));
-
-export function readHistory() {
-  return fs.existsSync(PATHS.history) ? JSON.parse(fs.readFileSync(PATHS.history, 'utf8')) : [];
-}
 
 /** @param {string} name e.g. "overfit" @returns {import('../types.mjs').Cast} */
 export function loadCast(name) {
   return JSON.parse(fs.readFileSync(path.join(PATHS.casts, `${name}.json`), 'utf8'));
 }
 
-/**
- * @param {string} runId
- * @param {{ cast: import('../types.mjs').Cast, condition: string, rounds: number, bpm: number,
- *           brief?: string, forbiddenBpm?: [number, number] }} options
- */
 const GUEST_NAME = /^[A-Z][A-Za-z0-9 _-]{1,23}$/;
 const GUEST_TEXT_MAX = 160;
 const HAS_LINK = /https?:\/\/|www\.|\.(com|net|org|io|ai|xyz)\b/i;
@@ -82,22 +72,24 @@ export function seatGuests(cast, guests = []) {
   return seated;
 }
 
-export function createSession(
-  runId,
-  { cast, condition, rounds, bpm, brief = '', forbiddenBpm, score = 1, genre, key, mode },
-) {
+/**
+ * Create a session log for a cast. Most callers want startSong, which seats guests in a house band.
+ * @param {string} runId
+ * @param {{ cast: import('../types.mjs').Cast, condition?: 'hearing'|'deaf', rounds: number, bpm: number,
+ *           genre: string, key: string, mode: string, brief?: string }} options
+ *   condition: 'deaf' hides the hearing report from agents (used to measure what hearing adds)
+ */
+export function createSession(runId, { cast, condition = 'hearing', rounds, bpm, brief = '', genre, key, mode }) {
   if (runExists(runId)) throw new Error(`Run '${runId}' already exists.`);
   if (!CONDITIONS.has(condition)) throw new Error(`condition must be one of: ${[...CONDITIONS].join(', ')}`);
   if (!Number.isInteger(rounds) || rounds < 1) throw new Error('rounds must be a positive integer');
-  const initial = score === 2 ? seedSong({ title: runId, genre, key, mode, bpm }) : initialSong(runId, bpm);
   return appendEvent(runId, 'session.created', 'operator', {
     cast,
     condition,
     rounds,
     brief,
-    scoreVersion: score,
-    forbidden: forbiddenBpm ? { bpm: forbiddenBpm } : {},
-    initialSong: initial,
+    scoreVersion: SCORE_VERSION,
+    initialSong: seedSong({ title: runId, genre, key, mode, bpm }),
   });
 }
 
@@ -108,19 +100,28 @@ export function createSession(
  *           id?: string, idPrefix?: string }} options
  * @returns {string} the session id
  */
-export function startSong({ band, genre, key, mode, bpm, rounds = 7, brief = '', guests = [], id, idPrefix = 'song' }) {
+export function startSong({
+  band,
+  genre,
+  key,
+  mode,
+  bpm,
+  rounds = 7,
+  brief = '',
+  guests = [],
+  id,
+  idPrefix = 'song',
+  condition = 'hearing',
+}) {
   if (!BANDS[band]) throw new Error(`band must be one of: ${Object.keys(BANDS).join(', ')}`);
   const runId = id ?? `${idPrefix}-${band}-${Date.now().toString(36)}`;
   const cast = seatGuests(loadCast(BANDS[band]), guests);
-  createSession(runId, { cast, condition: 'hearing', rounds, bpm, brief, score: 2, genre, key, mode });
+  createSession(runId, { cast, condition, rounds, bpm, brief, genre, key, mode });
   return runId;
 }
 
 export function describeForAgent(runId, agentName, { submitHint } = {}) {
-  const state = loadState(runId);
-  return isV2(state)
-    ? agentViewV2(state, agentName, { runId, submitHint })
-    : agentView(state, agentName, { runId, history: readHistory() });
+  return agentView(loadState(runId), agentName, { runId, submitHint });
 }
 
 /**
@@ -129,14 +130,14 @@ export function describeForAgent(runId, agentName, { submitHint } = {}) {
  * agent can read the reason and try again.
  * With { render: false } the move is logged but not rendered; call renderTurnNumber
  * later (the agent connector does this in the background, since a render takes minutes).
- * @returns {Promise<{ accepted: true, turn: number, kind: string, target: string|null, render: object|null, pruned: string[] }
+ * @returns {Promise<{ accepted: true, turn: number, kind: string, target: string, render: object|null, validator: object }
  *                  | { accepted: false, reason: string }>}
  */
 export async function submitTurn(runId, agentName, submission, { render: shouldRender = true } = {}) {
   const state = loadState(runId);
   let result;
   try {
-    result = isV2(state) ? applyTurnV2(state, agentName, submission) : applyTurn(state, agentName, submission);
+    result = applyTurn(state, agentName, submission);
   } catch (error) {
     if (!isSubmissionError(error)) throw error;
     appendEvent(runId, 'turn.rejected', agentName, { reason: error.message, submitted: submission });
@@ -148,10 +149,9 @@ export async function submitTurn(runId, agentName, submission, { render: shouldR
   return {
     accepted: true,
     turn,
-    kind: result.kind ?? result.tool,
-    target: result.target ?? result.summary,
+    kind: result.tool,
+    target: result.summary,
     render,
-    pruned: result.pruned ?? [],
     validator: render?.validator ?? result.validator,
   };
 }
@@ -163,7 +163,7 @@ export async function submitTurn(runId, agentName, submission, { render: shouldR
 async function renderTurn(runId, state, turn, song) {
   const label = `turn_${String(turn).padStart(2, '0')}`;
   try {
-    const render = isV2(state) ? await produceAndHear(runId, label, song) : await renderAndHear(runId, label, song);
+    const render = await produceAndHear(runId, label, song);
     appendEvent(runId, 'render', 'renderer', { turn, ...render });
     return render;
   } catch (error) {
@@ -187,58 +187,13 @@ export async function rerenderLatest(runId) {
   return renderTurn(runId, state, state.turns.length, state.song);
 }
 
-function summarize(runId, state, render) {
-  const byKind = {};
-  for (const t of state.turns) byKind[t.kind] = (byKind[t.kind] ?? 0) + 1;
-  const added = new Set(state.turns.filter((t) => t.kind === 'add').map((t) => t.target));
-  return {
-    session: runId,
-    condition: state.meta.condition,
-    rounds: state.meta.rounds,
-    accepted_turns: state.turns.length,
-    rejected_submissions: state.rejected.length,
-    by_kind: byKind,
-    layers_final: state.song.layers.map((l) => `${l.id}:${l.instrument}:${l.owner}`),
-    layers_added: added.size,
-    layers_surviving_from_adds: state.song.layers.filter((l) => added.has(l.id)).length,
-    render_ms_per_turn: state.renders.map((r) => r.timing_ms.total),
-    final: {
-      audio_seconds: render.audio_seconds,
-      timing_ms: render.timing_ms,
-      ledger: render.report?.ledger,
-      key_heard: render.report?.mix.key_heard,
-    },
-  };
-}
-
-/** Render the final master, write the summary files and append to history. */
+/**
+ * Render the final master. The judge is the referee: a failing song gets REPAIR_TURNS more turns (once); after
+ * that it is finalized anyway, with the failures on record.
+ */
 export async function finalizeSession(runId) {
   const state = loadState(runId);
   if (state.finalized) throw new Error(`Run '${runId}' is already finalized.`);
-  if (isV2(state)) return finalizeV2(runId, state);
-  const render = await renderAndHear(runId, 'final', state.song, { final: true });
-  const summary = summarize(runId, state, render);
-  appendEvent(runId, 'session.finalized', 'operator', { summary, render });
-
-  const dir = runDir(runId);
-  fs.writeFileSync(path.join(dir, 'summary.json'), JSON.stringify(summary, null, 1));
-  fs.writeFileSync(path.join(dir, 'song.json'), JSON.stringify(state.song, null, 1));
-  const history = readHistory();
-  history.push({
-    session: runId,
-    bpm: state.song.bpm,
-    key_heard: render.report?.mix.key_heard,
-    instruments: [...new Set(state.song.layers.map((l) => l.instrument))],
-  });
-  fs.writeFileSync(PATHS.history, JSON.stringify(history, null, 1));
-  return summary;
-}
-
-/**
- * v2: the validator is the referee. A failing song gets REPAIR_TURNS more turns
- * (once); after that it is finalized anyway, with the failures on record.
- */
-async function finalizeV2(runId, state) {
   const render = await produceAndHear(runId, 'final', state.song, { final: true });
   const repairs = state.extraTurns > 0;
   if (!render.validator.pass && !repairs) {

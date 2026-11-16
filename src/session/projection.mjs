@@ -14,10 +14,9 @@
  * @property {any|null} finalized       session.finalized payload, if any
  * @property {string|null} nextAgent    whose turn it is, or null when rounds are used up
  * @property {number} round             1-based current round
- * @property {boolean} destructiveRequired
+ * @property {boolean} deleteRequired   the next move has to take something out (one move in four)
  */
-import { needsDelete } from './rules-v2.mjs';
-import { needsDestructive } from './rules.mjs';
+import { needsDelete } from './rules.mjs';
 
 /**
  * @param {LogEvent[]} events
@@ -63,13 +62,11 @@ export function project(events) {
 
   const order = state.meta.cast.agents.map((a) => a.name);
   const taken = state.turns.length;
-  const v2 = state.meta.scoreVersion === 2;
   const budget = state.meta.rounds * order.length + state.extraTurns;
   return {
     ...state,
     nextAgent: taken >= budget ? null : order[taken % order.length],
     round: Math.floor(taken / order.length) + 1,
-    destructiveRequired: v2 ? false : needsDestructive(state.turns),
-    deleteRequired: v2 ? needsDelete(state.turns) : false,
+    deleteRequired: needsDelete(state.turns),
   };
 }
